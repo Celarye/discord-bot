@@ -1,6 +1,5 @@
 name: Bug Report
 description: If you come across a bug while using the Discord bot, please use the following template to report it and help us improve the bot.
-title: ''
 labels: ['unconfirmed bug']
 assignees: []
 body:

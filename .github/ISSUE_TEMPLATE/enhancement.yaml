@@ -1,6 +1,5 @@
 name: Enhancement Suggestion
 description: If you have an enhancement suggestion for the Discord bot, please use the following template to suggest it and help us improve the bot.
-title: ''
 labels: ['enhancement']
 assignees: []
 body:
