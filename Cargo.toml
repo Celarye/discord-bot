@@ -1,0 +1,16 @@
+[package]
+name = "discord-bot"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+dotenv = ["dep:dotenvy"]
+
+[dependencies]
+poise = "0.6"
+tokio = { version = "1.40.0", features = ["full"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-appender = "0.2"
+
+dotenvy = { version = "0.15", optional = true }
