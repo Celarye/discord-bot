@@ -18,9 +18,6 @@ A Discord Bot written in Rust, configurable through YAML and supporting WASM plu
 Work in Progress:
 
 -   **YAML Configuration:** Easily customize the bot's configuration using simple YAML files.
-
-Planned:
-
 -   **WASM Plugin Support:** Extend the bot's capabilities with custom WebAssembly plugins.
 
 ## Installation
