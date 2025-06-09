@@ -1,42 +1,129 @@
-use std::process::ExitCode;
+use std::{
+    collections::VecDeque,
+    env::{args_os, current_exe},
+    ffi::OsString,
+    os::unix::process::CommandExt,
+    process::{Command, ExitCode},
+    sync::Arc,
+};
 
-use tracing::{error, info};
+use clap::Parser;
+use tokio::sync::Mutex;
+use tracing::{error, info, level_filters::LevelFilter};
+use tracing_appender::non_blocking::WorkerGuard;
 
+mod cli;
+use cli::Cli;
+mod requests;
+use requests::Requests;
 mod client;
+use client::Client;
+mod config;
+use config::Config;
+mod plugins;
+use plugins::Runtime;
 mod utils;
 
 fn main() -> ExitCode {
+    if let Ok(should_restart) = run() {
+        if !should_restart {
+            info!("Exiting the bot");
+            return ExitCode::from(0);
+        }
+
+        restart();
+    }
+
+    error!("Exiting the bot");
+    ExitCode::from(1)
+}
+
+#[tokio::main]
+async fn run() -> Result<bool, ()> {
+    let cli = Cli::parse();
+
+    let _guard = initialization(
+        &cli.log_stdout_level,
+        &cli.log_stdout_ansi,
+        &cli.log_file_level,
+        &cli.log_file_ansi,
+    )?;
+
+    info!("Loading and parsing the config file");
+    let config = Config::new(&cli.config_path)?;
+
+    info!("Creating a request client");
+    let http_client = Requests::new()?;
+
+    info!("Fetching and caching plugins");
+    let available_plugins = http_client
+        .fetch_plugins(&config.plugins, &config.directory, config.cache)
+        .await?;
+
+    info!("{:#?}", &available_plugins);
+
+    info!("Creating the WASI runtime");
+    let mut runtime = Runtime::new();
+
+    info!("Initializing the plugins");
+    let running_plugins = runtime
+        .initializing_plugins(&available_plugins, &config.directory)
+        .await
+        .unwrap();
+
+    info!("{:#?}", &running_plugins);
+
+    info!("Creating the Discord client");
+    let mut discord_client = Client::new(&running_plugins, Arc::new(Mutex::new(runtime))).await;
+    info!("Starting the Discord client");
+    let restart = discord_client.start().await?;
+
+    Ok(restart)
+}
+
+fn initialization(
+    log_stdout_level: &LevelFilter,
+    log_stdout_ansi: &bool,
+    log_file_level: &LevelFilter,
+    log_file_ansi: &bool,
+) -> Result<Option<WorkerGuard>, ()> {
+    let guard = utils::logger::new(
+        log_stdout_level,
+        log_stdout_ansi,
+        log_file_level,
+        log_file_ansi,
+    )?;
+
     #[cfg(feature = "dotenv")]
-    if let Err(exit_code) = utils::Env::load_dotenv() {
-        eprintln!("Exiting the program");
-        return ExitCode::from(exit_code);
+    {
+        info!("Loading the .env file");
+        utils::env::load_dotenv()?;
     }
 
-    let _guard;
-    match utils::Logger::init() {
-        Ok(pguard) => {
-            if let Some(guard) = pguard {
-                _guard = guard;
-            }
+    info!("Validating the environment variables (DISCORD_BOT_TOKEN)");
+    utils::env::validate()?;
+
+    Ok(guard)
+}
+
+fn restart() {
+    let bot_executable_path = match current_exe() {
+        Ok(bot_executable_path) => bot_executable_path,
+        Err(err) => {
+            error!(
+                "Failed to get the current bot executable its path: {}",
+                &err
+            );
+            return;
         }
-        Err(exit_code) => {
-            eprintln!("Exiting the program");
-            return ExitCode::from(exit_code);
-        }
-    }
+    };
 
-    if let Err(exit_code) = utils::Env::validate() {
-        error!("Exiting the program");
-        return ExitCode::from(exit_code);
-    }
+    let mut args: VecDeque<OsString> = args_os().collect();
 
-    // TODO: Load, validate and parse YAML configuration
+    args.pop_front();
 
-    if let Err(exit_code) = client::Base::start() {
-        error!("Exiting the program");
-        return ExitCode::from(exit_code);
-    }
+    info!("Restarting the bot");
+    let err = Command::new(bot_executable_path).args(args).exec();
 
-    info!("Exiting the program");
-    ExitCode::from(0x0)
+    error!("Failed to start a new instance of the bot: {}", &err);
 }

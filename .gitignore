@@ -1,17 +1,6 @@
-# Ignore OS files
 **/.DS_Store
-
-# Ignore all the .vscode directories
-**/.vscode
-
-# Ignore the .env file
+/target
 .env
-
-# Ignore the target directory
-target
-
-# Ignore the Cargo.lock file
-Cargo.lock
-
-# Ignore the default log directory
-logs
+config.yaml
+/plugins
+/logs

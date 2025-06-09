@@ -2,17 +2,17 @@ blank_issues_enabled: false
 
 contact_links:
     - name: Asking Questions
-      url: https://github.com/paperback-community/discord-bot/discussions/categories/q-a
+      url: https://github.com/inkdex/registry-manager/discussions/categories/q-a
       about: Use the Q&A Discussions section if you want to ask questions.
     - name: Code of Conduct
-      url: https://github.com/paperback-community/discord-bot?tab=coc-ov-file#readme
+      url: https://github.com/inkdex/registry-manager?tab=coc-ov-file#readme
       about: Please read the code of conduct before creating any issue.
-    - name: Support Disclaimer
-      url: https://github.com/paperback-community/discord-bot/blob/master/.github/SUPPORT.md
-      about: Please read the support disclaimer before creating any issue.
+    - name: Support Guidelines
+      url: https://github.com/inkdex/registry-manager/blob/master/.github/SUPPORT.md
+      about: Please read the support guidelines before creating any issue.
     - name: Search the Issue Tracker
-      url: https://github.com/paperback-community/discord-bot/issues
+      url: https://github.com/inkdex/registry-manager/issues
       about: Check to make sure there is not an issue already open that is related to yours.
     - name: Our Discord Server
-      url: https://discord.gg/netsky-s-basement-965890377896845352
+      url: https://discord.gg/inkdex
       about: You can contact us through our Discord server as well.

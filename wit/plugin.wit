@@ -1,0 +1,152 @@
+package discord-bot:plugin@0.1.0;
+
+interface host-types {
+    enum log-levels {
+        trace,
+        debug,
+        info,
+        warn,
+        error,
+    }
+}
+
+interface plugin-types {
+    enum api-endpoint-crud-types {
+        get,
+        post,
+        put,
+        delete,
+    }
+
+    record init-values {
+        events: registered-events,
+        // Unimplemented
+        api-endpoints: list<tuple<string, api-endpoint-crud-types>>,
+        // Unimplemented
+        is-dependency: bool,
+    }
+
+    record registered-events {
+        commands: list<registered-commands>,
+        message: bool,
+    }
+
+    record registered-commands {
+        id: string,
+        name: string,
+        description: string,
+    }
+
+    variant event-types {
+        command(tuple<string, list<string>>),
+        message(string),
+    }
+
+    record event-response {
+        content: option<string>,
+        embeds: list<event-response-embed>,
+        attachments: list<event-response-attachment>,
+        ephermal: option<bool>,
+        //// Unimplemented
+        //components: list<event-response-component>,
+        //// Unimplemented
+        //allowed-mentions: option<event-response-allowed-mentions>,
+        reply: option<bool>,
+    }
+
+    record event-response-embed {
+        author: option<event-response-embed-author>,
+        color: option<tuple<u8, u8, u8>>,
+        description: option<string>,
+        fields: list<tuple<string, string>>,
+        footer: option<event-response-embed-author>,
+        image: option<string>,
+        thumbnail: option<string>,
+        timestamp: option<event-response-embed-timestamp>,
+        title: option<string>,
+        url: option<string>,
+        // Unimplemented
+        attachment: option<string>,
+    }
+
+    record event-response-embed-author {
+        name: option<string>,
+        icon-url: option<string>,
+        url: option<string>,
+    }
+
+    record event-response-embed-footer {
+        text: option<string>,
+        icon-url: option<string>,
+    }
+
+    variant event-response-embed-timestamp {
+        now,
+        unix-timestamp(s64),
+        unix-timestamp-milis(s64),
+        rfc-tttn(string),
+    }
+
+    record event-response-attachment {
+        attachment: event-response-attachment-attachment,
+        description: option<string>,
+    }
+
+
+    variant event-response-attachment-attachment {
+        bytes(event-response-attachment-bytes),
+        path(string),
+        url(string),
+    }
+
+    record event-response-attachment-bytes {
+        data: list<u8>,
+        filename: string,
+    }
+
+    //// Unimplemented
+    //variant event-response-component {
+    //    buttons(list<event-response-component-button>),
+    //    select-menu(event-response-component-select-menu),
+    //    input-text(event-response-component-input-text),
+    //}
+
+    //// Unimplemented
+    //record event-response-allowed-mentions {}
+
+    record api-payload {
+        headers: string, // JSON
+        body: string, // JSON
+    }
+}
+
+interface host {
+    use host-types.{log-levels};
+
+    // Unimplemented
+    write-log: func(level: log-levels, value: string);
+
+    // Unimplemented
+    call-dependency-function: func(dependency: string, function: string, params: string) -> result<string>; // params is JSON
+}
+
+interface plugin-functions {
+    use plugin-types.{init-values, event-types, event-response, api-endpoint-crud-types, api-payload};
+
+    init: func(settings: string) -> result<init-values, string>; // settings is JSON Schema
+    cleanup: func() -> result<_, string>;
+ 
+    event: func(event-type: event-types) -> option<event-response>;
+
+    // Unimplemented
+    api: func(endpoint: tuple<string, api-endpoint-crud-types>, request: api-payload) -> api-payload;
+
+    // Unimplemented
+    dependency: func(function: string, params: string) -> result<string>; // params and return type are JSON
+}
+
+world plugin {
+    import host;
+
+    export plugin-functions;
+}

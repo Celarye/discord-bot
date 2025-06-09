@@ -1,0 +1,38 @@
+name: Release
+
+on:
+    push:
+        tags:
+            - v[0-9]+.[0-9]+.[0-9]+*
+
+permissions:
+    contents: write
+
+jobs:
+    create-release:
+        name: Create GitHub Release
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout Branch
+              uses: actions/checkout@v4
+            - name: Create GitHub Release
+              uses: taiki-e/create-gh-release-action@v1
+              with:
+                  changelog: CHANGELOG.md
+                  token: ${{ secrets.GITHUB_TOKEN }}
+
+    upload-assets:
+        name: Upload Rust Binary to the GitHub Release
+        needs: create-release
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout Branch
+              uses: actions/checkout@v4
+            - name: Build Rust Binary and Upload It to the GitHub Release
+              uses: taiki-e/upload-rust-binary-action@v1
+              with:
+                  bin: registry-manager
+                  target: x86_64-unknown-linux-gnu
+                  include: LICENSE,README.md
+                  leading-dir: true
+                  token: ${{ secrets.GITHUB_TOKEN }}

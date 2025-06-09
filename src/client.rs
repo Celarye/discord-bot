@@ -1,5 +1,5 @@
 pub mod base;
-pub use base::Base;
+pub use base::Client;
 pub mod commands;
 pub use commands::Commands;
 pub mod data;

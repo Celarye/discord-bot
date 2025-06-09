@@ -1,9 +1,9 @@
 <div align="center">
-	<!-- <img src=".github/assets/logo.png" alt="Discord Bot Logo" height="100px"> -->
-	<h1>Discord Bot</h1>
-	<a href="https://discord.gg/netsky-s-basement-965890377896845352">
-		<img src="https://img.shields.io/discord/965890377896845352?label=Discord&labelColor=5865F2&color=2D2F33" alt="Discord Server">
-	</a>
+ <!-- <img src=".github/assets/logo.png" alt="Discord Bot Logo" height="100px"> -->
+ <h1>Discord Bot</h1>
+ <a href="https://discord.gg/netsky-s-basement-965890377896845352">
+  <img src="https://img.shields.io/discord/965890377896845352?label=Discord&labelColor=5865F2&color=2D2F33" alt="Discord Server">
+ </a>
 </div>
 
 <br/>
@@ -17,8 +17,8 @@ A Discord Bot written in Rust, configurable through YAML and supporting WASM plu
 
 Work in Progress:
 
--   **YAML Configuration:** Easily customize the bot's configuration using simple YAML files.
--   **WASM Plugin Support:** Extend the bot's capabilities with custom WebAssembly plugins.
+- **YAML Configuration:** Easily customize the bot's configuration using simple YAML files.
+- **WASM Plugin Support:** Extend the bot's capabilities with custom WebAssembly plugins.
 
 ## Installation
 
@@ -37,6 +37,27 @@ The development build is generated automatically after every push to the `master
 
 > [!WARNING]  
 > Only use this version if you are familiar with potential risks. We are not liable for any issues you may encounter.
+
+## discouraged
+
+```yaml
+name: <config-name>
+version: <discord-bot-major-version>
+
+plugins:
+  plugin_1:
+    environment:
+      VAR_1: "env_var_1"
+      VAR_2: "env_var_2"
+    settings:
+      key1: "setting_value_1"
+      key2:
+        - "setting_value_2"
+        - "setting_value_3"
+      key3:
+        subkey1: "setting_value_4"
+        subkey2: "setting_value_5"
+```
 
 ## Support Guidelines
 

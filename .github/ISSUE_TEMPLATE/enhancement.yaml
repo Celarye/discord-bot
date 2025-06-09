@@ -1,6 +1,8 @@
 name: Enhancement Suggestion
-description: If you have an enhancement suggestion for the Discord bot, please use the following template to suggest it and help us improve the bot.
-labels: ['enhancement']
+description: If you have an enhancement suggestion for the registry manager, please use the following template to suggest it and help us improve it.
+labels:
+    - "enhancement"
+    - "needs triage"
 assignees: []
 body:
     - type: markdown
@@ -13,11 +15,11 @@ body:
           label: Preflight Checklist
           description: Please ensure you've completed all of the following.
           options:
-              - label: I have read and agree to follow the [code of conduct](https://github.com/paperback-community/discord-bot?tab=coc-ov-file#readme).
+              - label: I have read and agree to follow the [code of conduct](https://github.com/inkdex/registry-manager?tab=coc-ov-file#readme).
                 required: true
-              - label: I have read and agree to follow the [support disclaimer](https://github.com/paperback-community/discord-bot/blob/master/.github/SUPPORT.md).
+              - label: I have read and agree to follow the [support guidelines](https://github.com/inkdex/registry-manager/blob/master/.github/SUPPORT.md).
                 required: true
-              - label: I have searched the [issue tracker](https://github.com/paperback-community/discord-bot/issues) for an enhancement suggestion that matches the one I want to file, without success.
+              - label: I have searched the [issue tracker](https://github.com/inkdex/registry-mananger/issues?q=label%3Aenhancement) for an enhancement suggestion that matches the one I want to file, without success.
                 required: true
     - type: textarea
       id: enhancement-description
@@ -31,7 +33,7 @@ body:
       id: enhancement-motivation
       attributes:
           label: Enhancement Motivation
-          description: Explain how the enhancement will improve the Discord bot.
+          description: Explain how the enhancement will improve the registry manager.
           placeholder: Tell us the about the benefits it will bring!
       validations:
           required: true
