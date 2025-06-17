@@ -130,12 +130,10 @@ pub fn new(
     }
 }
 
-pub fn read_logs(timestamp: String) -> String {
+pub fn read_logs(date: Option<String>) -> String {
     let log_path = Path::new("logs").join(format!(
         "discord-bot.{}.log",
-        Local::now().date_naive().format("%Y-%m-%d")
+        date.unwrap_or(Local::now().date_naive().format("%Y-%m-%d").to_string())
     ));
-    let logs = fs::read_to_string(log_path).unwrap_or(String::from(""));
-
-    logs
+    fs::read_to_string(log_path).unwrap_or(String::from(""))
 }

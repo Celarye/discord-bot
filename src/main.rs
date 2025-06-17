@@ -86,53 +86,63 @@ async fn run() -> Result<bool, ()> {
     let app = Router::new()
         .route("/", get(|| async { "Discord Bot is running" }))
         .route(
-            "/logs/",
-            get(|timestamp: String| async { utils::logger::read_logs(timestamp) }),
+            "/logs",
+            get(|timestamp: String| async { utils::logger::read_logs(None) }),
         )
         .route(
-            "/handled-requests/",
+            "/handled-requests",
             get(|| async move {
                 info!("Handled requests number requested");
                 format!("{}", data_clone.lock().await.handled_requests)
             }),
         )
         .route(
-            "/stop/",
+            "/plugins",
+            get(|| async move { serde_json::to_string(&running_plugins.clone()).unwrap() }),
+        )
+        .route(
+            "/stop",
             get(|| async {
-                shutdown().await;
                 exit(0);
                 ()
             }),
         )
         .route(
-            "/restart/",
+            "/restart",
             get(|| async {
-                shutdown().await;
                 restart();
             }),
         )
         .layer((
-            //TraceLayer::new_for_http(),
-            //TimeoutLayer::new(Duration::from_secs(10)),
+            TraceLayer::new_for_http(),
+            TimeoutLayer::new(Duration::from_secs(10)),
         ));
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await.unwrap();
 
-    let tasks = (
-        tokio::spawn(async move {
-            info!("Starting the Discord client");
-            discord_client.start().await
-        }),
-        tokio::spawn(async {
-            info!("Starting the API");
-            axum::serve(listener, app)
-                //.with_graceful_shutdown(shutdown())
-                .await
-        }),
-    );
+    let a = tokio::spawn(async move {
+        info!("Starting the Discord client");
+        discord_client.start().await
+    });
 
-    let restart = tasks.0.await.unwrap()?;
+    let b = tokio::spawn(async {
+        info!("Starting the API");
+        axum::serve(listener, app).await
+    });
 
-    Ok(restart)
+    tokio::select! {
+         result = a => {
+            if result.is_err() {
+                return Err(());
+            }
+            Ok(data.lock().await.restart)
+        },
+        result = b => {
+            if result.is_err() {
+                return Err(());
+            }
+            Ok(data.lock().await.restart)
+        },
+    }
 }
 
 fn initialization(
@@ -159,8 +169,6 @@ fn initialization(
 
     Ok(guard)
 }
-
-async fn shutdown() {}
 
 fn restart() {
     let bot_executable_path = match current_exe() {

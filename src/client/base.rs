@@ -1,14 +1,11 @@
-use std::{
-    env,
-    sync::{Arc, atomic::AtomicU32},
-};
+use std::{env, sync::Arc};
 
 use poise::{
     self,
     serenity_prelude::{self as serenity, Context},
 };
-use tokio::sync::{Mutex, MutexGuard};
-use tracing::{error, info};
+use tokio::sync::Mutex;
+use tracing::{debug, error, info, warn};
 
 use crate::plugins::{
     Runtime,
@@ -31,7 +28,8 @@ impl Client {
     ) -> (Self, Arc<Mutex<Data>>) {
         let token = env::var("DISCORD_BOT_TOKEN").unwrap();
 
-        let intents = serenity::GatewayIntents::non_privileged();
+        let intents =
+            serenity::GatewayIntents::non_privileged() | serenity::GatewayIntents::MESSAGE_CONTENT;
 
         let runtime_clone = runtime.clone();
         let init_plugins = initialized_plugins.clone();
@@ -69,9 +67,9 @@ impl Client {
         (Client { client }, data)
     }
 
-    pub async fn start(&mut self) -> Result<bool, ()> {
+    pub async fn start(&mut self) -> Result<(), ()> {
         match self.client.start().await {
-            Ok(()) => Ok(false),
+            Ok(()) => Ok(()),
             Err(err) => {
                 error!("An error occured while starting the client: {}", &err);
                 Err(())
@@ -90,20 +88,20 @@ impl Client {
                 info!("Logged in as {}", data_about_bot.user.name)
             }
             serenity::FullEvent::Message { new_message } => {
-                info!("Message event");
-                info!("Message content: {}", &new_message.content);
-                for plugin in data.lock().await.initialized_plugins.iter() {
-                    info!("Plugin: {:#?}", plugin);
+                if new_message.author.id == ctx.cache.current_user().id {
+                    return Ok(());
+                }
+
+                let mut ldata = data.lock().await;
+                for plugin in ldata.initialized_plugins.clone().iter() {
                     if !plugin.message_event {
                         continue;
                     }
 
-                    data.lock().await.handled_requests += 1;
+                    ldata.handled_requests += 1;
 
-                    info!("Plugin function call: \"{}\"", plugin.name);
-                    let pevent_response = data
-                        .lock()
-                        .await
+                    debug!("Plugin function call: \"{}\"", plugin.name);
+                    let pevent_response = ldata
                         .runtime
                         .lock()
                         .await
@@ -114,7 +112,7 @@ impl Client {
                         .await;
 
                     if pevent_response.is_none() {
-                        info!("No response");
+                        warn!("No response");
                         continue;
                     }
 
@@ -128,7 +126,7 @@ impl Client {
                             .reply(ctx, event_response.content.unwrap())
                             .await?;
                     } else {
-                        info!("No content");
+                        warn!("No content");
                     }
 
                     //for embed in event_response.embeds {

@@ -1,6 +1,7 @@
 use std::{collections::HashMap, fs, path::Path};
 
 use discord_bot::plugin::plugin_types::{EventResponse, EventTypes};
+use serde::Serialize;
 use tracing::{error, info};
 use wasmtime::{Config, Engine, Store, component::Linker};
 use wasmtime_wasi::{
@@ -42,7 +43,7 @@ impl IoView for InternalRuntime {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub struct InitializedPlugin {
     pub name: String,
     pub commands: Vec<InitializedPluginCommand>,
@@ -50,7 +51,7 @@ pub struct InitializedPlugin {
     pub is_dependency: bool,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub struct InitializedPluginCommand {
     id: String,
     name: String,
