@@ -63,8 +63,6 @@ async fn run() -> Result<bool, ()> {
         .fetch_plugins(&config.plugins, &config.directory, config.cache)
         .await?;
 
-    info!("{:#?}", &available_plugins);
-
     info!("Creating the WASI runtime");
     let mut runtime = Runtime::new();
 
@@ -73,8 +71,6 @@ async fn run() -> Result<bool, ()> {
         .initializing_plugins(&available_plugins, &config.directory)
         .await
         .unwrap();
-
-    info!("{:#?}", &running_plugins);
 
     info!("Creating the Discord client");
     let (mut discord_client, data) =
