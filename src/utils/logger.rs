@@ -1,4 +1,11 @@
-use tracing::level_filters::LevelFilter;
+use std::{
+    fmt::format,
+    fs,
+    path::{self, Path},
+};
+
+use chrono::{Date, Local};
+use tracing::{info, level_filters::LevelFilter};
 use tracing_appender::{
     non_blocking::WorkerGuard,
     rolling::{RollingFileAppender, Rotation},
@@ -121,4 +128,14 @@ pub fn new(
             }
         },
     }
+}
+
+pub fn read_logs(timestamp: String) -> String {
+    let log_path = Path::new("logs").join(format!(
+        "discord-bot.{}.log",
+        Local::now().date_naive().format("%Y-%m-%d")
+    ));
+    let logs = fs::read_to_string(log_path).unwrap_or(String::from(""));
+
+    logs
 }

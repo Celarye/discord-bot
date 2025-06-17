@@ -4,13 +4,11 @@ use std::{
 };
 
 use poise::{
-    self, SlashArgument,
-    serenity_prelude::{
-        self as serenity, Attachment, CacheHttp, Context, CreateCommandOption, prelude::TypeMapKey,
-    },
+    self,
+    serenity_prelude::{self as serenity, Context},
 };
-use tokio::sync::Mutex;
-use tracing::{debug, error, field::debug, info};
+use tokio::sync::{Mutex, MutexGuard};
+use tracing::{error, info};
 
 use crate::plugins::{
     Runtime,
@@ -26,25 +24,27 @@ pub struct Client {
 type Error = Box<dyn std::error::Error + Send + Sync>;
 //type Context<'a> = poise::Context<'a, Data, Error>;
 
-struct ShardManagerContainer;
-
-impl TypeMapKey for ShardManagerContainer {
-    type Value = Data;
-}
-
 impl Client {
     pub async fn new(
         initialized_plugins: &Vec<InitializedPlugin>,
         runtime: Arc<Mutex<Runtime>>,
-    ) -> Self {
+    ) -> (Self, Arc<Mutex<Data>>) {
         let token = env::var("DISCORD_BOT_TOKEN").unwrap();
 
         let intents = serenity::GatewayIntents::non_privileged();
 
         let runtime_clone = runtime.clone();
         let init_plugins = initialized_plugins.clone();
+        let data = Arc::new(Mutex::new(Data {
+            restart: false,
+            handled_requests: 0,
+            runtime: runtime_clone,
+            initialized_plugins: init_plugins.clone(),
+        }));
 
-        let framework = poise::Framework::builder()
+        let data_clone = data.clone();
+
+        let framework = poise::Framework::<Arc<Mutex<Data>>, _>::builder()
             .options(poise::FrameworkOptions {
                 event_handler: |ctx, event, framework, data| {
                     Box::pin(Self::event_handler(ctx, event, framework, data))
@@ -56,12 +56,7 @@ impl Client {
                 Box::pin(async move {
                     poise::builtins::register_globally(ctx, &framework.options().commands).await?;
 
-                    Ok(Data {
-                        restart: false,
-                        handled_requests: AtomicU32::new(0),
-                        runtime: runtime_clone,
-                        initialized_plugins: init_plugins.clone(),
-                    })
+                    Ok(data_clone)
                 })
             })
             .build();
@@ -71,31 +66,12 @@ impl Client {
             .await
             .unwrap();
 
-        // messy
-        client
-            .data
-            .write()
-            .await
-            .insert::<ShardManagerContainer>(Data {
-                restart: false,
-                handled_requests: AtomicU32::new(0),
-                runtime: runtime.clone(),
-                initialized_plugins: initialized_plugins.clone(),
-            });
-
-        Client { client }
+        (Client { client }, data)
     }
 
     pub async fn start(&mut self) -> Result<bool, ()> {
         match self.client.start().await {
-            Ok(()) => Ok(self
-                .client
-                .data
-                .read()
-                .await
-                .get::<ShardManagerContainer>()
-                .unwrap()
-                .restart),
+            Ok(()) => Ok(false),
             Err(err) => {
                 error!("An error occured while starting the client: {}", &err);
                 Err(())
@@ -106,8 +82,8 @@ impl Client {
     async fn event_handler(
         ctx: &Context,
         event: &serenity::FullEvent,
-        _framework: poise::FrameworkContext<'_, Data, Error>,
-        data: &Data,
+        _framework: poise::FrameworkContext<'_, Arc<Mutex<Data>>, Error>,
+        data: &Arc<Mutex<Data>>,
     ) -> Result<(), Error> {
         match event {
             serenity::FullEvent::Ready { data_about_bot, .. } => {
@@ -116,17 +92,18 @@ impl Client {
             serenity::FullEvent::Message { new_message } => {
                 info!("Message event");
                 info!("Message content: {}", &new_message.content);
-                for plugin in data.initialized_plugins.iter() {
+                for plugin in data.lock().await.initialized_plugins.iter() {
                     info!("Plugin: {:#?}", plugin);
                     if !plugin.message_event {
                         continue;
                     }
 
-                    data.handled_requests
-                        .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                    data.lock().await.handled_requests += 1;
 
                     info!("Plugin function call: \"{}\"", plugin.name);
                     let pevent_response = data
+                        .lock()
+                        .await
                         .runtime
                         .lock()
                         .await

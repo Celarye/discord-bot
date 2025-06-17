@@ -13,7 +13,7 @@ impl Commands {
     pub fn builder(
         initiated_plugins: &Vec<InitializedPlugin>,
         runtime: Arc<Mutex<Runtime>>,
-    ) -> Vec<Command<Data, Box<dyn Error + Send + Sync>>> {
+    ) -> Vec<Command<Arc<Mutex<Data>>, Box<dyn Error + Send + Sync>>> {
         let commands = vec![];
 
         // TODO: build
