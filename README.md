@@ -1,9 +1,6 @@
 <div align="center">
  <!-- <img src=".github/assets/logo.png" alt="Discord Bot Logo" height="100px"> -->
  <h1>Discord Bot</h1>
- <a href="https://discord.gg/netsky-s-basement-965890377896845352">
-  <img src="https://img.shields.io/discord/965890377896845352?label=Discord&labelColor=5865F2&color=2D2F33" alt="Discord Server">
- </a>
 </div>
 
 <br/>
