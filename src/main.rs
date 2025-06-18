@@ -97,7 +97,7 @@ async fn run() -> Result<bool, ()> {
         .route("/", get(|| async { "Discord Bot is running" }))
         .route(
             "/logs/{date}",
-            get(|Path(date): Path<Option<String>>| async { utils::logger::read_logs(date) }),
+            get(|Path(date): Path<String>| async { utils::logger::read_logs(Some(date)) }),
         )
         .route(
             "/handled-requests",
@@ -134,6 +134,7 @@ async fn run() -> Result<bool, ()> {
         .route(
             "/stop",
             get(|| async {
+                info!("Stopping the bot");
                 exit(0);
                 ()
             }),
