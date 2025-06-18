@@ -8,8 +8,9 @@ use std::{
     time::Duration,
 };
 
-use axum::{Router, routing::get};
+use axum::{Router, extract::Path, routing::get};
 use clap::Parser;
+use serde::Serialize;
 use tokio::sync::Mutex;
 use tower_http::{timeout::TimeoutLayer, trace::TraceLayer};
 use tracing::{error, info, level_filters::LevelFilter};
@@ -26,6 +27,13 @@ use config::Config;
 mod plugins;
 use plugins::Runtime;
 mod utils;
+
+#[derive(Serialize)]
+struct Plugin {
+    name: String,
+    version: String,
+    enabled: bool,
+}
 
 fn main() -> ExitCode {
     if let Ok(should_restart) = run() {
@@ -82,8 +90,8 @@ async fn run() -> Result<bool, ()> {
     let app = Router::new()
         .route("/", get(|| async { "Discord Bot is running" }))
         .route(
-            "/logs",
-            get(|timestamp: String| async { utils::logger::read_logs(None) }),
+            "/logs/{date}",
+            get(|Path(date): Path<Option<String>>| async { utils::logger::read_logs(date) }),
         )
         .route(
             "/handled-requests",
@@ -94,7 +102,28 @@ async fn run() -> Result<bool, ()> {
         )
         .route(
             "/plugins",
-            get(|| async move { serde_json::to_string(&running_plugins.clone()).unwrap() }),
+            get(|| async move {
+                let mut plugins = vec![];
+
+                for availble_plugin in available_plugins.iter() {
+                    let mut plugin = Plugin {
+                        name: availble_plugin.name.clone(),
+                        version: availble_plugin.version.clone(),
+                        enabled: false,
+                    };
+
+                    for running_plugin in running_plugins.iter() {
+                        if availble_plugin.name == running_plugin.name {
+                            plugin.enabled = false;
+                            break;
+                        }
+                    }
+
+                    plugins.push(plugin);
+                }
+
+                serde_json::to_string(&plugins).unwrap()
+            }),
         )
         .route(
             "/stop",

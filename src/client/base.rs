@@ -94,7 +94,7 @@ impl Client {
 
                 let mut ldata = data.lock().await;
                 for plugin in ldata.initialized_plugins.clone().iter() {
-                    if !plugin.message_event {
+                    if !plugin.events.message {
                         continue;
                     }
 

@@ -1,8 +1,9 @@
 use std::{collections::HashMap, fs, path::Path};
 
-use discord_bot::plugin::plugin_types::{EventResponse, EventTypes};
-use serde::Serialize;
-use tracing::{error, info};
+use discord_bot::plugin::plugin_types::{
+    ApiEndpointCrudTypes, EventResponse, EventTypes, RegisteredEvents,
+};
+use tracing::error;
 use wasmtime::{Config, Engine, Store, component::Linker};
 use wasmtime_wasi::{
     DirPerms, FilePerms, ResourceTable,
@@ -43,19 +44,12 @@ impl IoView for InternalRuntime {
     }
 }
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug)]
 pub struct InitializedPlugin {
     pub name: String,
-    pub commands: Vec<InitializedPluginCommand>,
-    pub message_event: bool,
+    pub events: RegisteredEvents,
+    pub api_endpoints: Vec<(String, ApiEndpointCrudTypes)>,
     pub is_dependency: bool,
-}
-
-#[derive(Clone, Debug, Serialize)]
-pub struct InitializedPluginCommand {
-    id: String,
-    name: String,
-    description: Option<String>,
 }
 
 impl Runtime {
@@ -63,8 +57,7 @@ impl Runtime {
         // Configure the WASM engine and create an instance
         let mut config = Config::new();
         config.async_support(true);
-        //// TODO: Create wasmtime epoch interuption
-        //config.epoch_interruption(true);
+        // TODO: Create wasmtime epoch interuption
 
         let engine = wasmtime::Engine::new(&config).unwrap();
 
@@ -137,12 +130,7 @@ impl Runtime {
                 InternalRuntime {
                     ctx: WasiCtxBuilder::new()
                         .envs(&env)
-                        .preopened_dir(
-                            plugin_dir.join("workspace"),
-                            "/",
-                            DirPerms::all(),
-                            FilePerms::all(),
-                        )
+                        .preopened_dir(ws_dir, "/", DirPerms::all(), FilePerms::all())
                         .unwrap()
                         .build(),
                     http: WasiHttpCtx::new(),
@@ -169,22 +157,10 @@ impl Runtime {
                 .unwrap()
                 .unwrap(); // Need to check properly
 
-            info!("{:#?}", &init_result);
-
-            let mut commands = vec![];
-
-            for command in init_result.events.commands {
-                commands.push(InitializedPluginCommand {
-                    id: command.id,
-                    name: command.name,
-                    description: Some(command.description),
-                })
-            }
-
             initialized_plugins.push(InitializedPlugin {
                 name: plugin.name.clone(),
-                commands,
-                message_event: init_result.events.message,
+                events: init_result.events,
+                api_endpoints: init_result.api_endpoints,
                 is_dependency: init_result.is_dependency,
             });
 

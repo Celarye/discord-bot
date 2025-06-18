@@ -16,6 +16,8 @@ impl Commands {
     ) -> Vec<Command<Arc<Mutex<Data>>, Box<dyn Error + Send + Sync>>> {
         let commands = vec![];
 
+        for plugin in initiated_plugins {}
+
         // TODO: build
 
         commands

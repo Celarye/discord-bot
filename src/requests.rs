@@ -1,3 +1,4 @@
+use axum::body::Bytes;
 use serde_json::Value;
 use std::{
     collections::{BTreeMap, HashMap},
@@ -18,7 +19,7 @@ pub struct Requests {
     client: Client,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct AvailablePlugin {
     pub name: String,
     pub version: String,
@@ -48,7 +49,7 @@ impl Requests {
         &self,
         registry: &String,
         path: &String,
-    ) -> Result<String, ()> {
+    ) -> Result<Bytes, ()> {
         let mut headers = HeaderMap::new();
         headers.insert(
             "Accept",
@@ -81,7 +82,7 @@ impl Requests {
                     }
                 }
 
-                match raw_response.text().await {
+                match raw_response.bytes().await {
                     Ok(response) => Ok(response),
                     Err(err) => {
                         error!(
