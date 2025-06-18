@@ -12,7 +12,11 @@ use axum::{Router, extract::Path, routing::get};
 use clap::Parser;
 use serde::Serialize;
 use tokio::sync::Mutex;
-use tower_http::{timeout::TimeoutLayer, trace::TraceLayer};
+use tower_http::{
+    cors::{Any, CorsLayer},
+    timeout::TimeoutLayer,
+    trace::TraceLayer,
+};
 use tracing::{error, info, level_filters::LevelFilter};
 use tracing_appender::non_blocking::WorkerGuard;
 
@@ -86,6 +90,8 @@ async fn run() -> Result<bool, ()> {
 
     let data_clone = data.clone();
 
+    let cors = CorsLayer::new().allow_origin(Any);
+
     info!("Creating the API");
     let app = Router::new()
         .route("/", get(|| async { "Discord Bot is running" }))
@@ -141,7 +147,8 @@ async fn run() -> Result<bool, ()> {
         .layer((
             TraceLayer::new_for_http(),
             TimeoutLayer::new(Duration::from_secs(10)),
-        ));
+        ))
+        .layer(cors);
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await.unwrap();
 
     let a = tokio::spawn(async move {

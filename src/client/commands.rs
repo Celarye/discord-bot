@@ -1,6 +1,6 @@
 use std::{error::Error, sync::Arc};
 
-use poise::{self, Command};
+use poise::{self, Command, serenity_prelude::Command as GCommand};
 use tokio::sync::Mutex;
 
 use crate::plugins::{Runtime, runtime::InitializedPlugin};
@@ -14,12 +14,19 @@ impl Commands {
         initiated_plugins: &Vec<InitializedPlugin>,
         runtime: Arc<Mutex<Runtime>>,
     ) -> Vec<Command<Arc<Mutex<Data>>, Box<dyn Error + Send + Sync>>> {
-        let commands = vec![];
+        //for plugin in initiated_plugins {
+        //    for command in plugin.events.commands {
+        //        let n_command = Command::default()
+        //            .create_as_slash_command()
+        //            .unwrap()
+        //            .name(command.name)
+        //            .description(command.description)
+        //            .set_options(vec![])
+        //            .clone_into;
 
-        for plugin in initiated_plugins {}
-
-        // TODO: build
-
-        commands
+        //        //GCommand::create_global_command(cache_http, n_command).await
+        //    }
+        //}
+        vec![]
     }
 }
